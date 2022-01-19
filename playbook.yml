@@ -1,0 +1,23 @@
+---
+- name: Update All VMs
+  hosts: default
+  become: true
+  tasks:
+    - name: Avoid vagrant trap with too many keys
+      community.general.ini_file:
+        path: /etc/ssh/sshd_config
+        section:
+        option: MaxAuthTries
+        value: 50
+        backup: yes
+    - name: Upgrade all packages
+      yum:
+        name: '*'
+        update_cache: yes
+        state: latest
+    - name: Install java and packages
+      yum:
+        name:
+          - java-11-openjdk-devel
+        state: present
+        update_cache: yes

@@ -1,0 +1,25 @@
+#! /usr/bin/bash
+
+tar xf /vagrant/apache-artemis-2.20.0-bin.tar.gz -C ~
+
+# Create a broker
+/home/vagrant/apache-artemis-2.20.0/bin/artemis create reflexer \
+--user admin \
+--password admin \
+--allow-anonymous \
+--addresses wps.v1.result,unicorn.v1.observation \
+--default-port 5151 \
+--no-hornetq-acceptor \
+--no-mqtt-acceptor \
+--no-stomp-acceptor \
+--no-amqp-acceptor \
+--verbose \
+--force
+
+# Add a user
+/home/vagrant/apache-artemis-2.20.0/bin/artemis user add \
+--user-command-user admin \
+-user-command-password admin \
+--role amq
+
+
