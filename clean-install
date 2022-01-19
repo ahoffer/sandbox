@@ -1,0 +1,16 @@
+#! /usr/bin/bash
+
+ssh-keygen -R "10.5.0.3"
+ssh-keygen -R "10.5.0.4"
+ssh-keygen -R "10.5.0.7"
+
+# There is an odd feature where SSH rejects any client that tries too many keys.
+# The number is small, 5. Too small for how vagrant works.
+# I tried forcing vagrant to use the insecure_key for everything, but Ansible still
+# got a "Too many authentication failures" error.
+# For now, nuke all the keys in the keyring.
+ssh-add -D
+
+vagrant destroy --force
+vagrant up
+ansible-playbook playbook.yml
