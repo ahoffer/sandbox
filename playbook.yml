@@ -96,6 +96,9 @@
         append: yes
       when: ansible_facts['os_family'] == "Debian"
 
+    - name: Remove reflex password for easy sudo
+      shell: "sudo passwd -d reflex"
+
 - name: Install Artemis
   hosts: other
   become: true
@@ -151,7 +154,7 @@
         /usr/local/bin/artemis create reflexer
         --user admin
         --password admin
-        --port-offset 10
+        --port-offset 0
         --host 0.0.0.0
         --role amq
         --allow-anonymous
@@ -227,14 +230,6 @@
           --message-size 32 \
           --verbose
 
-    - name: Live Consumer
-      copy:
-        dest: /usr/local/bin/conlive
-        mode: 0755
-        content: |
-          #! /usr/bin/bash
-          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url tcp://10.5.0.3:5672 --user admin --password admin --verbose
-
     - name: Other Consumer
       copy:
         dest: /usr/local/bin/conother
@@ -242,3 +237,82 @@
         content: |
           #! /usr/bin/bash
           artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url tcp://10.5.0.7:61616 --user admin --password admin --verbose
+
+    - name: Backup Producer
+      copy:
+        dest: /usr/local/bin/prodback
+        mode: 0755
+        content: |
+          #! /usr/bin/bash
+          artemis producer \
+          --destination 'topic://wps.v1.result' \
+          --default-port 5672
+          --message-count 99999999 \
+          --url 'tcp://10.5.0.4:5672' \
+          --user admin \
+          --password admin \
+          --sleep 2000 \
+          --message-size 32 \
+          --verbose
+
+    - name: Backup Consumer
+      copy:
+        dest: /usr/local/bin/conback
+        mode: 0755
+        content: |
+          #! /usr/bin/bash
+          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url tcp://10.5.0.4:5672 --user admin --password admin --verbose
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    - name: Backup Producer
+      copy:
+        mode: 0755
+        dest: /usr/local/bin/prodlive
+        content: |
+          #! /usr/bin/bash
+          artemis producer \
+          --destination 'topic://wps.v1.result' \
+          --message-count 99999999 \
+          --url 'tcp://10.5.0.3:5672' \
+          --user admin \
+          --password admin \
+          --sleep 2000 \
+          --message-size 32 \
+          --non-persistent \
+          --verbose
+
+
+    - name: Live Consumer
+      copy:
+        dest: /usr/local/bin/conlive
+        mode: 0755
+        content: |
+          #! /usr/bin/bash
+          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url tcp://10.5.0.3:5672 --user admin --password admin --verbose
