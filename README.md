@@ -13,7 +13,7 @@ vagrant destroy --force;vagrant up && ansible-playbook playbook.yml playbook.yml
 ### Configure Live and Backup
 
 Run the `opt/reflex/bin/configure-cluster.sh` file as root or as reflex on both live and backup VMs.
-Use IP addresses instead of hostnames.
+Use IP addresses instead of hostnames. Use "admin" for all usernames and password.
 
 ### Visit Web Consoles
 
@@ -28,11 +28,48 @@ Use IP addresses instead of hostnames.
 There are scripts on the path in the machine "other" for producers and consumers.
 A producer sends messages to the wps.v1.result address. 
 A consumer receives messages from that address.
-The producer and consumer scripts are separated by which broker (live, backup, other) the messages are sent to, or received from.
+The producer and consumer scripts for either for the cluster (live + backup) or the "other" broker.
 
-`prodlive`, `prodlive`, `prodother`
-`conlive`, `conlive`, `conother`
 
+### Configure Federation
+Create a file from this text:
+
+```json
+{
+    "addresses": [
+        "unicorn.v1.observation", 
+        "wps.v1.result"
+    ], 
+    "adressPolicyName": "addressPolicy", 
+    "name": "wps", 
+    "policySetName": "policySet", 
+    "sites": [
+        {
+            "direction": "downstream", 
+            "name": "second", 
+            "password": "ENC(-4db652271cf8b661)", 
+            "url_backup": "", 
+            "url_live": "tcp://10.5.0.7:5672", 
+            "user": "admin"
+        }
+    ]
+}
+```
+
+Use the `import-federation-files` script to import the file into the live and backup Reflex instances.
+
+
+```
+./import-federation-files wps.json -b ../../etc/artemis.xml
+```
+
+
+# Commands
+
+```
+systemctl stop reflex.service 
+# Also status, start, restart
+```
 
 ## NOTES
 * Added netty-connector to downstream Artemis (other). I don't know if that was required or not. Something to test, maybe.
@@ -42,6 +79,10 @@ The producer and consumer scripts are separated by which broker (live, backup, o
 ./artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url 'tcp://10.5.0.3:5672' --user admin --password admin --verbose
 
 ./artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url 'tcp://10.7.0.3:5672' --user admin --password admin --verbose
+```
+
+```
+tail -n 200 -f /opt/reflex/data/log/reflex.log
 ```
 
 

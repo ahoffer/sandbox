@@ -61,20 +61,16 @@
     - name: Turn off SSL 1
       lineinfile:
         path: /opt/reflex/etc/reflex.custom.system.properties
-        regexp: '(artemis.sslEnabled\s*=\s*).*'
+        regexp: 'artemis.sslEnabled\s*=\s*(true)'
         line: '\1false'
+        state: present
 
     - name: Turn off SSL 2
       lineinfile:
         path: /opt/reflex/etc/custom.system.properties
-        regexp: '(artemis.sslEnabled\s*=\s*).*'
+        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
         line: '\1false'
-
-    - name: Turn off SSL 3
-      lineinfile:
-        path: /opt/reflex/etc/com.connexta.reflex.broker.config.ActiveMQJMSClientFactoryWrapper.config
-        regexp: '(.*sslEnabled[\\]+=)(\w+)(.*)'
-        line: '\1false\3'
+        state: present
 
     - name: Update reflex user
       user:
@@ -140,7 +136,7 @@
         seconds: 3
       when: artemis_install
 
-    - name: Check is broker already exists
+    - name: Check if broker already exists
       stat:
         path: "/home/vagrant/reflexer"
       register: broker_dir
@@ -159,16 +155,23 @@
         --role amq
         --allow-anonymous
         --addresses wps.v1.result,unicorn.v1.observation
-        --no-hornetq-acceptor
-        --no-mqtt-acceptor
-        --no-stomp-acceptor
-        --no-amqp-acceptor
         --verbose
         --force
       args:
         chdir: /home/vagrant
       become_user: vagrant
       when: create_broker
+
+    - name: Add the netty connector
+      replace:
+        path: '/home/vagrant/reflexer/etc/broker.xml'
+        backup: yes
+        regexp: '(.*<acceptors>.*)'
+        replace: |
+          <connectors>
+              <connector name="netty-connector">tcp://localhost:61616</connector>
+          </connectors>
+          \1
 
     - name: Create systemd service file for broker "reflexer"
       copy:
@@ -187,7 +190,7 @@
 
     - name: Enable/Start Artemis service
       systemd:
-        name: artemis
+        name: artemis.service
         enabled: yes
         state: started
       register: service_status
@@ -196,22 +199,31 @@
       debug:
         msg: "Artemis service status is {{ service_status.state }}"
 
-    - name: Live Producer
+    - name: Cluster Producer
       copy:
         mode: 0755
-        dest: /usr/local/bin/prodlive
+        dest: /usr/local/bin/prodclust
         content: |
           #! /usr/bin/bash
           artemis producer \
           --destination 'topic://wps.v1.result' \
           --message-count 99999999 \
-          --url 'tcp://10.5.0.3:5672' \
+          --url '(tcp://10.5.0.3:5672,tcp://10.5.0.4:5672)?ha=true' \
           --user admin \
           --password admin \
           --sleep 2000 \
           --message-size 32 \
           --non-persistent \
           --verbose
+
+    - name: Cluster Consumer
+      copy:
+        dest: /usr/local/bin/conclust
+        mode: 0755
+        content: |
+          #! /usr/bin/bash
+          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url '(tcp://10.5.0.3:5672,tcp://10.5.0.4:5672)?ha=true' --user admin --password admin --verbose
+
 
     - name: Other Producer
       copy:
@@ -221,7 +233,6 @@
           #! /usr/bin/bash
           artemis producer \
           --destination 'topic://wps.v1.result' \
-          --default-port 5672
           --message-count 99999999 \
           --url 'tcp://10.5.0.7:61616' \
           --user admin \
@@ -238,81 +249,8 @@
           #! /usr/bin/bash
           artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url tcp://10.5.0.7:61616 --user admin --password admin --verbose
 
-    - name: Backup Producer
-      copy:
-        dest: /usr/local/bin/prodback
-        mode: 0755
-        content: |
-          #! /usr/bin/bash
-          artemis producer \
-          --destination 'topic://wps.v1.result' \
-          --default-port 5672
-          --message-count 99999999 \
-          --url 'tcp://10.5.0.4:5672' \
-          --user admin \
-          --password admin \
-          --sleep 2000 \
-          --message-size 32 \
-          --verbose
-
-    - name: Backup Consumer
-      copy:
-        dest: /usr/local/bin/conback
-        mode: 0755
-        content: |
-          #! /usr/bin/bash
-          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url tcp://10.5.0.4:5672 --user admin --password admin --verbose
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    - name: Backup Producer
-      copy:
-        mode: 0755
-        dest: /usr/local/bin/prodlive
-        content: |
-          #! /usr/bin/bash
-          artemis producer \
-          --destination 'topic://wps.v1.result' \
-          --message-count 99999999 \
-          --url 'tcp://10.5.0.3:5672' \
-          --user admin \
-          --password admin \
-          --sleep 2000 \
-          --message-size 32 \
-          --non-persistent \
-          --verbose
-
-
-    - name: Live Consumer
-      copy:
-        dest: /usr/local/bin/conlive
-        mode: 0755
-        content: |
-          #! /usr/bin/bash
-          artemis consumer --destination 'topic://wps.v1.result' --message-count 99999999 --url tcp://10.5.0.3:5672 --user admin --password admin --verbose
+    - name: Open up Artemis Management Console
+      replace:
+        path: "/home/vagrant/reflexer/etc/bootstrap.xml"
+        regexp: '(.*)http://localhost(.*)'
+        replace: '\1http://0.0.0.0\2'
