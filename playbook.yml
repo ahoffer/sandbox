@@ -230,6 +230,8 @@
           User=vagrant
           ExecStart=/home/vagrant/reflexer/bin/artemis run
           ExecStop=/home/vagrant/reflexer/bin/artemis stop
+          [Install]
+          WantedBy=mult-user.target
 
     - name: Enable/Start Artemis service
       systemd:

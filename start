@@ -1,0 +1,4 @@
+#! /usr/bin/bash
+
+vagrant up
+./term
