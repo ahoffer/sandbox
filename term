@@ -1,0 +1,4 @@
+#! /usr/bin/bash
+
+./clean-hostkeys
+terminator -m -g terminator.config -l reflex

@@ -58,32 +58,14 @@ Create a file from this text:
 
 Use the `import-federation-files` script to import the file into the live and backup Reflex instances.
 
-
 ```
 ./import-federation-files wps.json -b ../../etc/artemis.xml
 ```
 
-
 # Commands
 
-```
-systemctl stop reflex.service 
-# Also status, start, restart
-```
-
-## NOTES
-* Added netty-connector to downstream Artemis (other). I don't know if that was required or not. Something to test, maybe.
-* `<connector name="netty-connector">tcp://localhost:61616</connector>`
-
-```
-./artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url 'tcp://10.5.0.3:5672' --user admin --password admin --verbose
-
-./artemis consumer --destination topic://wps.v1.result --message-count 99999999 --url 'tcp://10.7.0.3:5672' --user admin --password admin --verbose
-```
-
-```
-tail -n 200 -f /opt/reflex/data/log/reflex.log
-```
+Open console `./term`
+Use shortcuts 'start', 'stop', 'restart', and 'log' on the live and backup VMs
 
 
 ## Misc

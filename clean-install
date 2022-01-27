@@ -1,8 +1,6 @@
 #! /usr/bin/bash
 
-ssh-keygen -R "10.5.0.3"
-ssh-keygen -R "10.5.0.4"
-ssh-keygen -R "10.5.0.7"
+./clean-hostkeys
 
 # There is an odd feature where SSH rejects any client that tries too many keys.
 # The number is small, 5. Too small for how vagrant works.
@@ -11,6 +9,7 @@ ssh-keygen -R "10.5.0.7"
 # For now, nuke all the keys in the keyring.
 ssh-add -D
 
+# Obliterate all VMs and then reconstitute them
 vagrant destroy --force
 vagrant up
 ansible-playbook playbook.yml

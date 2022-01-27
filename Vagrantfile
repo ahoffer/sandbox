@@ -10,6 +10,7 @@ def config(name, ip, config)
         config.vm.network :private_network, ip: ip
         config.vm.hostname =  name
     #       config.vm.disk :disk, size: "20GB", primary: true
+        config.vm.synced_folder "./files", "/vagrant"
         config.vm.provider "virtualbox" do |v|
             v.memory = 8096
             v.cpus = 4
@@ -23,7 +24,6 @@ def config(name, ip, config)
         end
     end
 end
-
 
 Vagrant.configure("2") do |config|
     config("live1", "10.5.0.3", config)
