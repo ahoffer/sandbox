@@ -1,12 +1,13 @@
 #! /usr/bin/python3
 
 import subprocess, re, argparse, datetime
+default = '(tcp://10.5.0.3:5672,tcp://10.5.0.4:5672)?ha=true'
 parser = argparse.ArgumentParser(description='Publish messages to wps.v1.result.')
-parser.add_argument('-u', '--url', nargs='?', help='tcp://10.5.0.7:61616', default = '(tcp://10.5.0.3:5672,tcp://10.5.0.4:5672)?ha=true')
+parser.add_argument('-u', '--url', nargs='?', help=default, default = default)
 parser.add_argument('-m','--msg', nargs='?', help='Content of message', default = datetime.datetime.now())
 args = parser.parse_args()
 count =0
-print("Waiting  ...")
+print("Publishing...")
 r_msg = re.compile('Sent:?\s?.*')
 cmd = f"""
 artemis producer \
