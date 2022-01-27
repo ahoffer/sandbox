@@ -205,16 +205,25 @@
       become_user: vagrant
       when: create_broker
 
-    - name: Add the netty connector
-      replace:
-        path: '/home/vagrant/reflexer/etc/broker.xml'
-        backup: yes
-        regexp: '(.*<acceptors>.*)'
-        replace: |
-          <connectors>
-              <connector name="netty-connector">tcp://localhost:61616</connector>
-          </connectors>
-          \1
+    # The XML plugin is NOT idempotent
+    - name: "Establish if connector exists"
+      shell: "cat /home/vagrant/reflexer/etc/broker.xml"
+      register: broker_xml
+
+    - name: Set broker.xml "netty" fact is the netty connector already exists
+      set_fact:
+        netty_connector: "{{ broker_xml.stdout.find('netty-connector') > 0 }}"
+
+    - name: Add netty connector attrib
+      community.general.xml:
+        path: "/home/vagrant/reflexer/etc/broker.xml"
+        xpath: "/x:configuration/y:core/connectors/connector[@name='netty-connector']"
+        value: "tcp://10.5.0.7:61616"
+        namespaces:
+          "x": "urn:activemq"
+          "y": "urn:activemq:core"
+          "z": "urn:activemq:jms"
+      when: not netty_connector
 
     - name: Create systemd service file for broker "reflexer"
       copy:
@@ -249,6 +258,38 @@
         path: "/home/vagrant/reflexer/etc/bootstrap.xml"
         regexp: '(.*)http://localhost(.*)'
         replace: '\1http://0.0.0.0\2'
+
+    - name: status
+      copy:
+        mode: 0755
+        dest: /usr/local/bin/status
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl status artemis.service
+
+    - name: start
+      copy:
+        mode: 0755
+        dest: /usr/local/bin/start
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl start aretmis.service
+
+    - name: restart
+      copy:
+        mode: 0755
+        dest: /usr/local/bin/restart
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl restart artemis.service
+
+    - name: stop
+      copy:
+        mode: 0755
+        dest: /usr/local/bin/stop
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl stop artemis.service
 
     - name: Copy words that start with "o"
       copy:
