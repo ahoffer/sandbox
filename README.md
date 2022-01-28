@@ -37,7 +37,6 @@ Create a file from this text:
 ```json
 {
     "addresses": [
-        "unicorn.v1.observation", 
         "wps.v1.result"
     ], 
     "adressPolicyName": "addressPolicy", 
@@ -46,10 +45,10 @@ Create a file from this text:
     "sites": [
         {
             "direction": "downstream", 
-            "name": "second", 
+            "name": "beta", 
             "password": "ENC(-4db652271cf8b661)", 
             "url_backup": "", 
-            "url_live": "tcp://10.5.0.7:5672", 
+            "url_live": "tcp://10.5.0.7:61616", 
             "user": "admin"
         }
     ]
