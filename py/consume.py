@@ -14,9 +14,9 @@ while True:
     str_out = out.stdout.decode('utf-8')
     m_uuid = r_uuid.search(str_out)
     m_msg = r_msg.search(str_out)
-    if not m_msg:
-        print('Error occurred. Exiting.')
-        exit(1)
+    if not m_msg or not m_uuid:
+        print('---------------------------------------')
+        print(str_out)
     str_msg=m_msg.group().split('Received ')[1]
     str_uuid = m_uuid.group()
     count += 1
