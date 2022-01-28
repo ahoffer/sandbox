@@ -35,9 +35,6 @@
         state: present
         update_cache: yes
 
-    - name: Install stomp python package
-      shell: "sudo pip3 install stomp.py"
-
 - name: Install Reflex
   hosts: reflex
   become: true
