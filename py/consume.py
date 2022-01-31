@@ -14,11 +14,13 @@ while True:
     str_out = out.stdout.decode('utf-8')
     m_uuid = r_uuid.search(str_out)
     m_msg = r_msg.search(str_out)
-    if not m_msg or not m_uuid:
+    count += 1
+    if  m_msg and m_uuid:
+        str_msg=m_msg.group().split('Received ')[1]
+        str_uuid = m_uuid.group()
+        extra = f'consuming msg={str_msg}     ' if str_uuid not in str_msg else ''
+        print(f'count={count}   {extra}uuid={str_uuid}')
+    else:
         print('---------------------------------------')
         print(str_out)
-    str_msg=m_msg.group().split('Received ')[1]
-    str_uuid = m_uuid.group()
-    count += 1
-    extra = f'consuming msg={str_msg}     ' if str_uuid not in str_msg else ''
-    print(f'count={count}   {extra}uuid={str_uuid}')
+
