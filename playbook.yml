@@ -31,9 +31,8 @@
           - java-11-openjdk
           - java-11-openjdk-devel
           - python3
-          - python3-pip
-        state: present
-        update_cache: yes
+          - python-qpid-proton
+          - https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
 
 - name: Install Reflex
   hosts: reflex
