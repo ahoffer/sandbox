@@ -8,7 +8,7 @@ class Recv(MessagingHandler):
         super(Recv, self).__init__()
 
     def on_start(self, event):
-        self.connection = event.container.connect('10.5.0.7:61616/wps.v1.result', user='admin', password='admin')
+        self.connection = event.container.connect('10.5.0.7:61616', user='admin', password='admin')
         event.container.create_receiver(self.connection, source='wps.v1.result')
 
     def on_message(self, event):
@@ -18,10 +18,7 @@ class Recv(MessagingHandler):
         #     event.connection.close()
 
 
-Container(Recv()).run()
-
-
-# try:
-#     Container(Recv('')).run()
-# except KeyboardInterrupt:
-#     pass
+try:
+    Container(Recv()).run()
+except KeyboardInterrupt:
+    pass
