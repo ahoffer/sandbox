@@ -19,18 +19,18 @@
         value: 50
         backup: yes
 
-    - name: Upgrade all packages
-      yum:
-        name: '*'
-        update_cache: yes
-        state: latest
+#    - name: Upgrade all packages
+#      yum:
+#        name: '*'
+#        update_cache: yes
+#        state: latest
 
     - name: Install java and packages
       yum:
         name:
           - java-11-openjdk
           - java-11-openjdk-devel
-          - python3
+          - epel-release
           - python-qpid-proton
 
 - name: Install Reflex
@@ -142,6 +142,13 @@
   become: true
   remote_user: vagrant
   tasks:
+
+    - name: Python stuff
+      shell: |
+        pip install --upgrade setuptools
+        pip install --upgrade pip
+        pip install argparse --user
+
     - name: Check is artemis already exists
       stat:
         path: "/home/vagrant/artemis/bin/artemis"
@@ -196,7 +203,7 @@
         --host 0.0.0.0
         --role amq
         --allow-anonymous
-        --addresses wps.v1.result,unicorn.v1.observation
+        --queues wps.v1.result:multicast','unicorn.v1.observation:multicast
         --verbose
         --force
       args:
@@ -245,7 +252,7 @@
       systemd:
         name: artemis.service
         enabled: yes
-        state: started
+        state: restarted
       register: service_status
 
     - name: Service status
