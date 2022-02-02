@@ -4,7 +4,6 @@
 # ENV["VAGRANT_EXPERIMENTAL"] = "disks"
 
 def config(name, ip, config)
-
     config.vm.define name do |config|
         config.vm.box = "centos/7"
         config.vm.network :private_network, ip: ip
@@ -26,8 +25,8 @@ def config(name, ip, config)
 end
 
 Vagrant.configure("2") do |config|
-    config("live1", "10.5.0.3", config)
-    config("backup1", "10.5.0.4", config)
+    config("live", "10.5.0.3", config)
+    config("backup", "10.5.0.4", config)
     config("other", "10.5.0.7", config)
 end
 

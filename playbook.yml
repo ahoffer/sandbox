@@ -19,11 +19,11 @@
         value: 50
         backup: yes
 
-#    - name: Upgrade all packages
-#      yum:
-#        name: '*'
-#        update_cache: yes
-#        state: latest
+    #    - name: Upgrade all packages
+    #      yum:
+    #        name: '*'
+    #        update_cache: yes
+    #        state: latest
 
     - name: Install java and packages
       yum:
@@ -100,7 +100,7 @@
     - name: status
       copy:
         mode: 0755
-        dest: /usr/local/bin/status
+        dest: /usr/bin/status
         content: |
           #! /usr/bin/bash
           sudo systemctl status reflex.service
@@ -108,7 +108,7 @@
     - name: start
       copy:
         mode: 0755
-        dest: /usr/local/bin/start
+        dest: /usr/bin/start
         content: |
           #! /usr/bin/bash
           sudo systemctl start reflex.service
@@ -116,7 +116,7 @@
     - name: restart
       copy:
         mode: 0755
-        dest: /usr/local/bin/restart
+        dest: /usr/bin/restart
         content: |
           #! /usr/bin/bash
           sudo systemctl restart reflex.service
@@ -124,7 +124,7 @@
     - name: stop
       copy:
         mode: 0755
-        dest: /usr/local/bin/stop
+        dest: /usr/bin/stop
         content: |
           #! /usr/bin/bash
           sudo systemctl stop reflex.service
@@ -132,22 +132,53 @@
     - name: log
       copy:
         mode: 0755
-        dest: /usr/local/bin/log
+        dest: /usr/bin/log
         content: |
           #! /usr/bin/bash
           tail -n200 -f /opt/reflex/data/log/reflex.log
 
+    - name: copy federation file
+      become_user: reflex
+      copy:
+        dest: /opt/reflex/etc/wps.json
+        content: |
+          {
+            "addresses": [
+                "wps.v1.result"
+            ],
+            "adressPolicyName": "addressPolicy",
+            "name": "wps",
+            "policySetName": "policySet",
+            "sites": [
+              {
+                "direction": "downstream",
+                "name": "beta",
+                "password": "ENC(-4db652271cf8b661)",
+                "url_backup": "",
+                "url_live": "tcp://10.5.0.7:61616",
+                "user": "admin"
+              }
+            ]
+          }
+
+    - name: import federation file
+      shell: "/opt/reflex/bin/configure-federation/import-federation-files /opt/reflex/etc/wps.json"
+      args:
+        chdir: "/opt/reflex/etc"
+      become_user: reflex
+
 - name: Install Artemis
+
   hosts: other
   become: true
   remote_user: vagrant
   tasks:
 
-    - name: Python stuff
-      shell: |
-        pip install --upgrade setuptools
-        pip install --upgrade pip
-        pip install argparse --user
+    #    - name: Python stuff
+    #      shell: |
+    #        pip install --upgrade setuptools
+    #        pip install --upgrade pip
+    #        pip install argparse --user
 
     - name: Check is artemis already exists
       stat:
@@ -177,7 +208,7 @@
     - name: Create a symbolic link
       file:
         src: /home/vagrant/artemis/bin/artemis
-        dest: /usr/local/bin/artemis
+        dest: /usr/bin/artemis
         state: link
 
     - name: Give the VM time to unzip and sort stuff out. Not sure if sleep should be here, or after creating the sym link.
@@ -196,7 +227,7 @@
 
     - name: Create broker
       shell: >
-        /usr/local/bin/artemis create reflexer
+        /usr/bin/artemis create reflexer
         --user admin
         --password admin
         --port-offset 0
@@ -268,7 +299,7 @@
     - name: status
       copy:
         mode: 0755
-        dest: /usr/local/bin/status
+        dest: /usr/bin/status
         content: |
           #! /usr/bin/bash
           sudo systemctl status artemis.service
@@ -276,7 +307,7 @@
     - name: start
       copy:
         mode: 0755
-        dest: /usr/local/bin/start
+        dest: /usr/bin/start
         content: |
           #! /usr/bin/bash
           sudo systemctl start aretmis.service
@@ -284,7 +315,7 @@
     - name: restart
       copy:
         mode: 0755
-        dest: /usr/local/bin/restart
+        dest: /usr/bin/restart
         content: |
           #! /usr/bin/bash
           sudo systemctl restart artemis.service
@@ -292,7 +323,7 @@
     - name: stop
       copy:
         mode: 0755
-        dest: /usr/local/bin/stop
+        dest: /usr/bin/stop
         content: |
           #! /usr/bin/bash
           sudo systemctl stop artemis.service
@@ -307,10 +338,10 @@
         src: ./files/c.txt
         dest: /vagrant/c.txt
 
-    - name: Install python scripts
-      copy:
-        src: "{{ item }}"
-        dest: "/usr/local/bin"
-        mode: 0755
-      with_fileglob:
-        - "/projects/reflex-env/py/*"
+#    - name: Install python scripts
+#      copy:
+#        src: "{{ item }}"
+#        dest: "/usr/bin"
+#        mode: 0755
+#      with_fileglob:
+#        - "/projects/reflex-env/bin/*"
