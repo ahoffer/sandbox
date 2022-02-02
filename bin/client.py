@@ -37,11 +37,11 @@ class Client(MessagingHandler):
         self.connection = self.container.connect(urls=self.brokers, user='admin', password='admin')
         if args.role == 'consumer':
             receiver = event.container.create_receiver(self.connection, source='wps.v1.result')
-            DurableSubscription().apply(receiver)
+            # DurableSubscription().apply(receiver)
             print('Waiting...')
         elif args.role == 'producer':
             self.sender = self.container.create_sender(self.connection, 'wps.v1.result')
-            AtLeastOnce().apply(self.sender)
+            # AtLeastOnce().apply(self.sender)
             self.container.schedule(2, self)
         else:
             print('Did not understand role {role}'.format(role=args.role))

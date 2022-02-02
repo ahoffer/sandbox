@@ -167,6 +167,22 @@
         chdir: "/opt/reflex/etc"
       become_user: reflex
 
+    - name: produce
+      copy:
+        mode: 0755
+        dest: /usr/bin/produce
+        content: |
+          #! /usr/bin/bash
+          artemis producer \
+          --destination 'topic://wps.v1.result' \
+          --message-count 99999999 \
+          --url 'tcp://10.5.0.3:61616' \
+          --user admin \
+          --password admin \
+          --sleep 2000 \
+          --message-size 32 \
+          --verbose
+
 - name: Install Artemis
 
   hosts: other
@@ -234,7 +250,7 @@
         --host 0.0.0.0
         --role amq
         --allow-anonymous
-        --queues wps.v1.result:multicast','unicorn.v1.observation:multicast
+        --queues 'wps.v1.result:multicast','unicorn.v1.observation:multicast'
         --verbose
         --force
       args:
@@ -328,15 +344,54 @@
           #! /usr/bin/bash
           sudo systemctl stop artemis.service
 
-    - name: Copy words that start with "o"
+    - name: log
       copy:
-        src: ./files/o.txt
-        dest: /vagrant/c.txt
+        mode: 0755
+        dest: /usr/bin/log
+        content: |
+          #! /usr/bin/bash
+          sudo journalctl -f -u artemis.service
 
-    - name: Copy words that start with "c"
+    - name: produce
       copy:
-        src: ./files/c.txt
-        dest: /vagrant/c.txt
+        mode: 0755
+        dest: /usr/bin/produce
+        content: |
+          #! /usr/bin/bash
+          artemis producer \
+          --destination 'topic://wps.v1.result' \
+          --message-count 99999999 \
+          --url 'tcp://10.5.0.7:61616' \
+          --user admin \
+          --password admin \
+          --sleep 2000 \
+          --message-size 32 \
+          --verbose
+
+    - name: consume
+      copy:
+        mode: 0755
+        dest: /usr/bin/consume
+        content: |
+          #! /usr/bin/bash
+          artemis consumer \
+          --destination topic://wps.v1.result \
+          --message-count 99999999 \
+          --url 'tcp://10.5.0.7:61616' 
+          --user admin \
+          --password admin \
+          --verbose \
+
+
+#    - name: Copy words that start with "o"
+#      copy:
+#        src: ./files/o.txt
+#        dest: /vagrant/c.txt
+
+#    - name: Copy words that start with "c"
+#      copy:
+#        src: ./files/c.txt
+#        dest: /vagrant/c.txt
 
 #    - name: Install python scripts
 #      copy:
