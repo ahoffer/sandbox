@@ -1,6 +1,6 @@
 #! /usr/bin/python3
-import proton
-from proton import Message, Connection
+from proton import Message
+from proton._reactor import DurableSubscription, AtLeastOnce
 from proton.handlers import MessagingHandler
 from proton.reactor import Container
 import settings
@@ -36,10 +36,12 @@ class Client(MessagingHandler):
         self.container.container_id = args.role + '-' + '_'.join(args.hosts)
         self.connection = self.container.connect(urls=self.brokers, user='admin', password='admin')
         if args.role == 'consumer':
-            event.container.create_receiver(self.connection, source='wps.v1.result')
+            receiver = event.container.create_receiver(self.connection, source='wps.v1.result')
+            DurableSubscription().apply(receiver)
             print('Waiting...')
         elif args.role == 'producer':
             self.sender = self.container.create_sender(self.connection, 'wps.v1.result')
+            AtLeastOnce().apply(self.sender)
             self.container.schedule(2, self)
         else:
             print('Did not understand role {role}'.format(role=args.role))
