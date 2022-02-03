@@ -1,5 +1,0 @@
-#! /usr/bin/bash
-
-vagrant snapshot save --force live1 live1-snapshot
-vagrant snapshot save --force backup1 backup1-snapshot
-vagrant snapshot save --force other other-snapshot

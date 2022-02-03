@@ -19,6 +19,7 @@
         value: 50
         backup: yes
 
+    # Updating all packages is very slow
     #    - name: Upgrade all packages
     #      yum:
     #        name: '*'
@@ -32,6 +33,46 @@
           - java-11-openjdk-devel
           - epel-release
           - python-qpid-proton
+          - mlocate
+          - perl
+          - gcc
+          - dkms
+          - kernel-devel
+          - kernel-headers
+          - make
+          - bzip2
+
+    # Install Artemis on every machine so that we have the binary CLI available
+    - name: Check if artemis already exists
+      stat:
+        path: "/home/vagrant/artemis/bin/artemis"
+      register: artemis_bin
+
+    - name: Set fact
+      set_fact:
+        artemis_install: "{{ not artemis_bin.stat.exists }}"
+
+    - name: Print msg
+      debug:
+        msg: "Install Artemis? {{ artemis_install }}"
+
+    - name: Make Artemis destination dir
+      file:
+        path: /home/vagrant/artemis
+        state: directory
+      become_user: vagrant
+      when: artemis_install
+
+    - name: Extract artemis in home dir
+      shell: "tar xf /vagrant/*artemis*.tar.gz -C /home/vagrant/artemis --strip-components 1"
+      become_user: vagrant
+      when: artemis_install
+
+    - name: Create "check" executable
+      copy:
+        dest: /usr/bin/check
+        content: '/home/vagrant/artemis/bin/artemis check node --url tcp://localhost:5673 --user admin --password admin --timeout 2000 --live --up --backup --diskUsage 85 --memoryUsage 85 --fail-at-end --peers 1 | tail -n +3 | head -n -1'
+        mode: 0755
 
 - name: Install Reflex
   hosts: reflex
@@ -190,48 +231,6 @@
   remote_user: vagrant
   tasks:
 
-    #    - name: Python stuff
-    #      shell: |
-    #        pip install --upgrade setuptools
-    #        pip install --upgrade pip
-    #        pip install argparse --user
-
-    - name: Check is artemis already exists
-      stat:
-        path: "/home/vagrant/artemis/bin/artemis"
-      register: artemis_bin
-
-    - name: Set fact
-      set_fact:
-        artemis_install: "{{ not artemis_bin.stat.exists }}"
-
-    - name: Print msg
-      debug:
-        msg: "Install Artemis? {{ artemis_install }}"
-
-    - name: Make Artemis destination dir
-      file:
-        path: /home/vagrant/artemis
-        state: directory
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Extract artemis in home dir
-      shell: "tar xf /vagrant/*artemis*.tar.gz -C /home/vagrant/artemis --strip-components 1"
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Create a symbolic link
-      file:
-        src: /home/vagrant/artemis/bin/artemis
-        dest: /usr/bin/artemis
-        state: link
-
-    - name: Give the VM time to unzip and sort stuff out. Not sure if sleep should be here, or after creating the sym link.
-      pause:
-        seconds: 3
-      when: artemis_install
-
     - name: Check if broker already exists
       stat:
         path: "/home/vagrant/reflexer"
@@ -377,26 +376,7 @@
           artemis consumer \
           --destination topic://wps.v1.result \
           --message-count 99999999 \
-          --url 'tcp://10.5.0.7:61616' 
+          --url 'tcp://10.5.0.7:61616' \
           --user admin \
           --password admin \
           --verbose \
-
-
-#    - name: Copy words that start with "o"
-#      copy:
-#        src: ./files/o.txt
-#        dest: /vagrant/c.txt
-
-#    - name: Copy words that start with "c"
-#      copy:
-#        src: ./files/c.txt
-#        dest: /vagrant/c.txt
-
-#    - name: Install python scripts
-#      copy:
-#        src: "{{ item }}"
-#        dest: "/usr/bin"
-#        mode: 0755
-#      with_fileglob:
-#        - "/projects/reflex-env/bin/*"
