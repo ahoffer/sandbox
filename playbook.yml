@@ -26,11 +26,11 @@
     #        update_cache: yes
     #        state: latest
 
-    - name: Add repository
-      yum_repository:
-        name: elastic
-        description: Elasticsearch repository for 7.x packages
-        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+#    - name: Add repository
+#      yum_repository:
+#        name: elastic
+#        description: Elasticsearch repository for 7.x packages
+#        baseurl: https://artifacts.elastic.co/packages/7.x/yum
 
     - name: Install java and packages
       yum:
@@ -47,12 +47,12 @@
           - kernel-headers
           - make
           - bzip2
-          - elasticsearch
+#          - elasticsearch
 
-    - name: Add elastic search
-      shell: |
-       rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
-       && sudo yum install --enablerepo=elasticsearch elasticsearch
+#    - name: Add elastic search
+#      shell: |
+#       rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
+#       && sudo yum install --enablerepo=elasticsearch elasticsearch
 
     # Install Artemis on every machine so that we have the binary CLI available
     - name: Check if artemis already exists
