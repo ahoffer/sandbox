@@ -50,7 +50,7 @@
           - elasticsearch
 
     - name: Add elastic search
-     shell: |
+      shell: |
        rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
        && sudo yum install --enablerepo=elasticsearch elasticsearch
 
