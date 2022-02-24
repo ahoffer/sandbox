@@ -1,4 +1,4 @@
 #! /usr/bin/bash
 
 ./clean-hostkeys
-terminator -m -g terminator.cfg -l sshonly
+terminator -m -g ./terminator.cfg

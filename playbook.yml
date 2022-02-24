@@ -113,19 +113,19 @@
         name: "{{ rpm_file }}"
       become_user: root
 
-    - name: Turn off SSL 1
-      lineinfile:
-        path: /opt/reflex/etc/reflex.custom.system.properties
-        regexp: 'artemis.sslEnabled\s*=\s*(true)'
-        line: '\1false'
-        state: present
-
-    - name: Turn off SSL 2
-      lineinfile:
-        path: /opt/reflex/etc/custom.system.properties
-        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
-        line: '\1false'
-        state: present
+#    - name: Turn off SSL 1
+#      lineinfile:
+#        path: /opt/reflex/etc/reflex.custom.system.properties
+#        regexp: 'artemis.sslEnabled\s*=\s*(true)'
+#        line: '\1false'
+#        state: present
+#
+#    - name: Turn off SSL 2
+#      lineinfile:
+#        path: /opt/reflex/etc/custom.system.properties
+#        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
+#        line: '\1false'
+#        state: present
 
     - name: Update reflex user
       user:
@@ -236,8 +236,53 @@
           --message-size 32 \
           --verbose
 
-- name: Install Artemis
+- name: Configure Node 1
+  hosts: node1
+  become: true
+  remote_user: vagrant
+  tasks:
+    - name: Run config script
+      shell: >
+        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh 
+        live 
+        --siteId alpha
+        --live: "10.5.0.3"
+        --backup: "10.5.0.4"
+        --sslEnabled no
+        --iplist: "10.5.07"
+        --cluster_auth: admin
+        --externalLive: admin
+        --brokerUser: admin
+        --brokerUserPassword: admin
+        --classification: S
+        --releasability: NF
+        --doldap: no
+        --dohydra: no
 
+- name: Configure Node 2
+  hosts: node2
+  become: true
+  remote_user: vagrant
+  tasks:
+    - name: Run config script
+      shell: >
+        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
+        backup
+        --siteId alpha
+        --live: "10.5.0.3"
+        --backup: "10.5.0.4"
+        --sslEnabled no
+        --iplist: "10.5.07"
+        --cluster_auth: admin
+        --externalLive: admin
+        --brokerUser: admin
+        --brokerUserPassword: admin
+        --classification: S
+        --releasability: NF
+        --doldap: no
+        --dohydra: no
+
+- name: Install Artemis
   hosts: other
   become: true
   remote_user: vagrant
