@@ -26,11 +26,11 @@
     #        update_cache: yes
     #        state: latest
 
-#    - name: Add repository
-#      yum_repository:
-#        name: elastic
-#        description: Elasticsearch repository for 7.x packages
-#        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+    #    - name: Add repository
+    #      yum_repository:
+    #        name: elastic
+    #        description: Elasticsearch repository for 7.x packages
+    #        baseurl: https://artifacts.elastic.co/packages/7.x/yum
 
     - name: Install java and packages
       yum:
@@ -42,17 +42,16 @@
           - mlocate
           - perl
           - gcc
-          - dkms
           - kernel-devel
           - kernel-headers
           - make
           - bzip2
-#          - elasticsearch
+    #          - elasticsearch
 
-#    - name: Add elastic search
-#      shell: |
-#       rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
-#       && sudo yum install --enablerepo=elasticsearch elasticsearch
+    #    - name: Add elastic search
+    #      shell: |
+    #       rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
+    #       && sudo yum install --enablerepo=elasticsearch elasticsearch
 
     # Install Artemis on every machine so that we have the binary CLI available
     - name: Check if artemis already exists
@@ -113,19 +112,19 @@
         name: "{{ rpm_file }}"
       become_user: root
 
-#    - name: Turn off SSL 1
-#      lineinfile:
-#        path: /opt/reflex/etc/reflex.custom.system.properties
-#        regexp: 'artemis.sslEnabled\s*=\s*(true)'
-#        line: '\1false'
-#        state: present
-#
-#    - name: Turn off SSL 2
-#      lineinfile:
-#        path: /opt/reflex/etc/custom.system.properties
-#        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
-#        line: '\1false'
-#        state: present
+    #    - name: Turn off SSL 1
+    #      lineinfile:
+    #        path: /opt/reflex/etc/reflex.custom.system.properties
+    #        regexp: 'artemis.sslEnabled\s*=\s*(true)'
+    #        line: '\1false'
+    #        state: present
+    #
+    #    - name: Turn off SSL 2
+    #      lineinfile:
+    #        path: /opt/reflex/etc/custom.system.properties
+    #        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
+    #        line: '\1false'
+    #        state: present
 
     - name: Update reflex user
       user:
@@ -287,6 +286,41 @@
   become: true
   remote_user: vagrant
   tasks:
+    - name: Check is artemis already exists
+      stat:
+        path: "/home/vagrant/artemis/bin/artemis"
+      register: artemis_bin
+
+    - name: Set fact
+      set_fact:
+        artemis_install: "{{ not artemis_bin.stat.exists }}"
+
+    - name: Print msg
+      debug:
+        msg: "Install Artemis? {{ artemis_install }}"
+
+    - name: Make Artemis destination dir
+      file:
+        path: /home/vagrant/artemis
+        state: directory
+      become_user: vagrant
+      when: artemis_install
+
+    - name: Extract artemis in home dir
+      shell: "tar xf /vagrant/*artemis*.tar.gz -C /home/vagrant/artemis --strip-components 1"
+      become_user: vagrant
+      when: artemis_install
+
+    - name: Create a symbolic link
+      file:
+        src: /home/vagrant/artemis/bin/artemis
+        dest: /usr/local/bin/artemis
+        state: link
+
+    - name: Give the VM time to unzip and sort stuff out. Not sure if sleep should be here, or after creating the sym link.
+      pause:
+        seconds: 3
+      when: artemis_install
 
     - name: Check if broker already exists
       stat:
@@ -299,7 +333,7 @@
 
     - name: Create broker
       shell: >
-        /usr/bin/artemis create reflexer
+        /home/vagrant/artemis/bin/artemis create reflexer
         --user admin
         --password admin
         --port-offset 0
