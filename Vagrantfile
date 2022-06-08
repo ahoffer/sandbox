@@ -3,10 +3,11 @@
 
 # ENV["VAGRANT_EXPERIMENTAL"] = "disks"
 
-def config(name, ip, config)
-    config.vm.define name do |config|
-        config.vm.box = "centos/7"
-        config.vm.network :private_network, ip: ip
+def create(name, ip, config)
+    config.vm.define name do
+        config.vm.box = "centos7vb"
+        config.vbguest.installer_options = { allow_kernel_upgrade: true }
+        config.vm.network :private_network, type: "dhcp"
         config.vm.hostname =  name
     #       config.vm.disk :disk, size: "20GB", primary: true
         config.vm.synced_folder "./files", "/vagrant"
@@ -24,13 +25,11 @@ def config(name, ip, config)
     end
 end
 
+
 Vagrant.configure("2") do |config|
-    config("live", "10.5.0.3", config)
-    config("backup", "10.5.0.4", config)
-    config("other", "10.5.0.7", config)
+#     config("live", "192.168.63.7", config)
+#     config("backup", "192.168.63.8", config)
+    create("node1", "10.5.0.3", config)
+    create("node2", "10.5.0.4", config)
+#     config("other", "10.5.0.7", config)
 end
-
-
-
-
-

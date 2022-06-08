@@ -35,57 +35,20 @@
       yum:
         name:
           - java-11-openjdk
-          - java-11-openjdk-devel
+#          - java-11-openjdk-devel
           - epel-release
           - python-qpid-proton
           - mlocate
           - perl
-          - gcc
-          - kernel-devel
-          - kernel-headers
+#          - gcc
+#          - kernel-devel
+#          - kernel-headers
           - make
           - bzip2
-    #          - elasticsearch
 
-    #    - name: Add elastic search
-    #      shell: |
-    #       rpm --import https://artifacts.elastic.co/GPG-KEY-elasticsearch \
-    #       && sudo yum install --enablerepo=elasticsearch elasticsearch
-
-    # Install Artemis on every machine so that we have the binary CLI available
-    - name: Check if artemis already exists
-      stat:
-        path: "/home/vagrant/artemis/bin/artemis"
-      register: artemis_bin
-
-    - name: Set fact
-      set_fact:
-        artemis_install: "{{ not artemis_bin.stat.exists }}"
-
-    - name: Print msg
-      debug:
-        msg: "Install Artemis? {{ artemis_install }}"
-
-    - name: Make Artemis destination dir
-      file:
-        path: /home/vagrant/artemis
-        state: directory
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Extract artemis in home dir
-      shell: "tar xf /vagrant/*artemis*.tar.gz -C /home/vagrant/artemis --strip-components 1"
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Create "check" executable
-      copy:
-        dest: /usr/bin/check
-        content: '/home/vagrant/artemis/bin/artemis check node --url tcp://localhost:5673 --user admin --password admin --timeout 2000 --live --up --backup --diskUsage 85 --memoryUsage 85 --fail-at-end --peers 1 | tail -n +3 | head -n -1'
-        mode: 0755
 
 - name: Install Reflex
-  hosts: reflex
+  hosts: default
   become: true
   remote_user: vagrant
   tasks:
@@ -99,6 +62,7 @@
         patterns: "*.rpm"
       register: rpm_find
 
+    # If there is no rpm file, the error message "The task includes an option with an undefined variable. The error was: list object has no element 0"
     - name: set fact
       set_fact:
         rpm_file: "{{ rpm_find.files[0].path }}"
@@ -111,19 +75,6 @@
         name: "{{ rpm_file }}"
       become_user: root
 
-    #    - name: Turn off SSL 1
-    #      lineinfile:
-    #        path: /opt/reflex/etc/reflex.custom.system.properties
-    #        regexp: 'artemis.sslEnabled\s*=\s*(true)'
-    #        line: '\1false'
-    #        state: present
-    #
-    #    - name: Turn off SSL 2
-    #      lineinfile:
-    #        path: /opt/reflex/etc/custom.system.properties
-    #        regexp: '(artemis.sslEnabled\s*=\s*)(true)'
-    #        line: '\1false'
-    #        state: present
 
     - name: Update reflex user
       user:
@@ -188,285 +139,50 @@
           #! /usr/bin/bash
           tail -n200 -f /opt/reflex/data/log/reflex.log
 
-    - name: copy federation file
-      become_user: reflex
-      copy:
-        dest: /opt/reflex/etc/wps.json
-        content: |
-          {
-            "addresses": [
-                "wps.v1.result"
-            ],
-            "adressPolicyName": "addressPolicy",
-            "name": "wps",
-            "policySetName": "policySet",
-            "sites": [
-              {
-                "direction": "downstream",
-                "name": "beta",
-                "password": "ENC(-4db652271cf8b661)",
-                "url_backup": "",
-                "url_live": "tcp://10.5.0.7:61616",
-                "user": "admin"
-              }
-            ]
-          }
 
-    - name: import federation file
-      shell: "/opt/reflex/bin/configure-federation/import-federation-files /opt/reflex/etc/wps.json"
-      args:
-        chdir: "/opt/reflex/etc"
-      become_user: reflex
-
-    - name: produce
-      copy:
-        mode: 0755
-        dest: /usr/bin/produce
-        content: |
-          #! /usr/bin/bash
-          artemis producer \
-          --destination 'topic://wps.v1.result' \
-          --message-count 99999999 \
-          --url 'tcp://10.5.0.3:61616' \
-          --user admin \
-          --password admin \
-          --sleep 2000 \
-          --message-size 32 \
-          --verbose
-
-- name: Configure Node 1
-  hosts: node1
-  become: true
-  remote_user: vagrant
-  tasks:
-    - name: Run config script
-      shell: >
-        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh 
-        live 
-        --siteId alpha
-        --live: "10.5.0.3"
-        --backup: "10.5.0.4"
-        --sslEnabled no
-        --iplist: "10.5.07"
-        --cluster_auth: admin
-        --externalLive: admin
-        --brokerUser: admin
-        --brokerUserPassword: admin
-        --classification: S
-        --releasability: NF
-        --doldap: no
-        --dohydra: no
-
-- name: Configure Node 2
-  hosts: node2
-  become: true
-  remote_user: vagrant
-  tasks:
-    - name: Run config script
-      shell: >
-        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
-        backup
-        --siteId alpha
-        --live: "10.5.0.3"
-        --backup: "10.5.0.4"
-        --sslEnabled no
-        --iplist: "10.5.07"
-        --cluster_auth: admin
-        --externalLive: admin
-        --brokerUser: admin
-        --brokerUserPassword: admin
-        --classification: S
-        --releasability: NF
-        --doldap: no
-        --dohydra: no
-
-- name: Install Artemis
-  hosts: other
-  become: true
-  remote_user: vagrant
-  tasks:
-    - name: Check is artemis already exists
-      stat:
-        path: "/home/vagrant/artemis/bin/artemis"
-      register: artemis_bin
-
-    - name: Set fact
-      set_fact:
-        artemis_install: "{{ not artemis_bin.stat.exists }}"
-
-    - name: Print msg
-      debug:
-        msg: "Install Artemis? {{ artemis_install }}"
-
-    - name: Make Artemis destination dir
-      file:
-        path: /home/vagrant/artemis
-        state: directory
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Extract artemis in home dir
-      shell: "tar xf /vagrant/*artemis*.tar.gz -C /home/vagrant/artemis --strip-components 1"
-      become_user: vagrant
-      when: artemis_install
-
-    - name: Create a symbolic link
-      file:
-        src: /home/vagrant/artemis/bin/artemis
-        dest: /usr/local/bin/artemis
-        state: link
-
-    - name: Give the VM time to unzip and sort stuff out. Not sure if sleep should be here, or after creating the sym link.
-      pause:
-        seconds: 3
-      when: artemis_install
-
-    - name: Check if broker already exists
-      stat:
-        path: "/home/vagrant/reflexer"
-      register: broker_dir
-
-    - name: Set broker fact
-      set_fact:
-        create_broker: "{{ not broker_dir.stat.exists }}"
-
-    - name: Create broker
-      shell: >
-        /home/vagrant/artemis/bin/artemis create reflexer
-        --user admin
-        --password admin
-        --port-offset 0
-        --host 0.0.0.0
-        --role amq
-        --allow-anonymous
-        --queues 'wps.v1.result:multicast','unicorn.v1.observation:multicast'
-        --verbose
-        --force
-      args:
-        chdir: /home/vagrant
-      become_user: vagrant
-      when: create_broker
-
-    # The XML plugin is NOT idempotent
-    - name: "Establish if connector exists"
-      shell: "cat /home/vagrant/reflexer/etc/broker.xml"
-      register: broker_xml
-
-    - name: Set broker.xml "netty" fact is the netty connector already exists
-      set_fact:
-        netty_connector: "{{ broker_xml.stdout.find('netty-connector') > 0 }}"
-
-    - name: Add netty connector attrib
-      community.general.xml:
-        path: "/home/vagrant/reflexer/etc/broker.xml"
-        xpath: "/x:configuration/y:core/connectors/connector[@name='netty-connector']"
-        value: "tcp://10.5.0.7:61616"
-        namespaces:
-          "x": "urn:activemq"
-          "y": "urn:activemq:core"
-          "z": "urn:activemq:jms"
-      when: not netty_connector
-
-    - name: Create systemd service file for broker "reflexer"
-      copy:
-        dest: "/etc/systemd/system/artemis.service"
-        content: |
-          [Unit]
-          Description=Artemis Server
-          After=network.target
-          [Service]
-          Type=simple
-          Restart=always
-          RestartSec=30
-          User=vagrant
-          ExecStart=/home/vagrant/reflexer/bin/artemis run
-          ExecStop=/home/vagrant/reflexer/bin/artemis stop
-          [Install]
-          WantedBy=mult-user.target
-
-    - name: Enable/Start Artemis service
-      systemd:
-        name: artemis.service
-        enabled: yes
-        state: restarted
-      register: service_status
-
-    - name: Service status
-      debug:
-        msg: "Artemis service status is {{ service_status.state }}"
-
-    - name: Open up Artemis Management Console
-      replace:
-        path: "/home/vagrant/reflexer/etc/bootstrap.xml"
-        regexp: '(.*)http://localhost(.*)'
-        replace: '\1http://0.0.0.0\2'
-
-    - name: status
-      copy:
-        mode: 0755
-        dest: /usr/bin/status
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl status artemis.service
-
-    - name: start
-      copy:
-        mode: 0755
-        dest: /usr/bin/start
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl start aretmis.service
-
-    - name: restart
-      copy:
-        mode: 0755
-        dest: /usr/bin/restart
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl restart artemis.service
-
-    - name: stop
-      copy:
-        mode: 0755
-        dest: /usr/bin/stop
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl stop artemis.service
-
-    - name: log
-      copy:
-        mode: 0755
-        dest: /usr/bin/log
-        content: |
-          #! /usr/bin/bash
-          sudo journalctl -f -u artemis.service
-
-    - name: produce
-      copy:
-        mode: 0755
-        dest: /usr/bin/produce
-        content: |
-          #! /usr/bin/bash
-          artemis producer \
-          --destination 'topic://wps.v1.result' \
-          --message-count 99999999 \
-          --url 'tcp://10.5.0.7:61616' \
-          --user admin \
-          --password admin \
-          --sleep 2000 \
-          --message-size 32 \
-          --verbose
-
-    - name: consume
-      copy:
-        mode: 0755
-        dest: /usr/bin/consume
-        content: |
-          #! /usr/bin/bash
-          artemis consumer \
-          --destination topic://wps.v1.result \
-          --message-count 99999999 \
-          --url 'tcp://10.5.0.7:61616' \
-          --user admin \
-          --password admin \
-          --verbose \
+## THE CONFIG-OPTIONS.SH LACKS THE PART THAT CREATES AND STARTS THE SERVICE. Could be missing other stuff too???
+#- name: Configure Node 1
+#  hosts: node1
+#  become: true
+#  remote_user: vagrant
+#  tasks:
+#    - name: Run config script
+#      shell: >
+#        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
+#        live
+#        --siteId alpha
+#        --live: "10.5.0.3"
+#        --backup: "10.5.0.4"
+#        --sslEnabled no
+#        --iplist: "10.5.07"
+#        --cluster_auth: admin
+#        --externalLive: admin
+#        --brokerUser: admin
+#        --brokerUserPassword: admin
+#        --classification: S
+#        --releasability: NF
+#        --doldap: no
+#        --dohydra: no
+#
+#- name: Configure Node 2
+#  hosts: node2
+#  become: true
+#  remote_user: vagrant
+#  tasks:
+#    - name: Run config script
+#      shell: >
+#        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
+#        backup
+#        --siteId alpha
+#        --live: "10.5.0.3"
+#        --backup: "10.5.0.4"
+#        --sslEnabled no
+#        --iplist: "10.5.07"
+#        --cluster_auth: admin
+#        --externalLive: admin
+#        --brokerUser: admin
+#        --brokerUserPassword: admin
+#        --classification: S
+#        --releasability: NF
+#        --doldap: no
+#        --dohydra: no
