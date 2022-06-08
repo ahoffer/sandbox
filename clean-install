@@ -11,6 +11,4 @@ ssh-add -D
 
 # Obliterate all VMs and then reconstitute them
 vagrant destroy --force
-vagrant up
-ansible-playbook playbook.yml
-vagrant status
+./install

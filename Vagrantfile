@@ -3,7 +3,7 @@
 
 # ENV["VAGRANT_EXPERIMENTAL"] = "disks"
 
-def create(name, ip, config)
+def create(name, config)
     config.vm.define name do
         config.vm.box = "centos7vb"
         config.vbguest.installer_options = { allow_kernel_upgrade: true }
@@ -25,11 +25,7 @@ def create(name, ip, config)
     end
 end
 
-
-Vagrant.configure("2") do |config|
-#     config("live", "192.168.63.7", config)
-#     config("backup", "192.168.63.8", config)
-    create("node1", "10.5.0.3", config)
-    create("node2", "10.5.0.4", config)
-#     config("other", "10.5.0.7", config)
+Vagrant.configure("2") do |object|
+    create("node1", object)
+    create("node2", object)
 end
