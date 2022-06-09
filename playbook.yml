@@ -75,7 +75,6 @@
         name: "{{ rpm_file }}"
       become_user: root
 
-
     - name: Update reflex user
       user:
         name: reflex
@@ -141,28 +140,34 @@
 
 
 ## THE CONFIG-OPTIONS.SH LACKS THE PART THAT CREATES AND STARTS THE SERVICE. Could be missing other stuff too???
-#- name: Configure Node 1
-#  hosts: node1
-#  become: true
-#  remote_user: vagrant
-#  tasks:
-#    - name: Run config script
-#      shell: >
-#        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
-#        live
-#        --siteId alpha
-#        --live: "10.5.0.3"
-#        --backup: "10.5.0.4"
-#        --sslEnabled no
-#        --iplist: "10.5.07"
-#        --cluster_auth: admin
-#        --externalLive: admin
-#        --brokerUser: admin
-#        --brokerUserPassword: admin
-#        --classification: S
-#        --releasability: NF
-#        --doldap: no
-#        --dohydra: no
+- name: "Configure Node 1"
+  hosts: node1
+  become: true
+  remote_user: vagrant
+  tasks:
+    - name: Run config script
+      shell: |
+        set -e
+        APP_HOME=/opt/reflex
+        CONFIG_PATH=${APP_HOME}/bin/configure-cluster-cli
+        MODE=live
+        source ${CONFIG_PATH}/config-main.sh
+        if [ $MODE == "live" ]; then
+          sudo setupReflexInstance $MODE
+        elif [ $MODE == "backup" ]; then
+          setupReflexInstance $MODE --externalHttpsPort="18993"
+        elif [ $MODE == "replay" ]; then
+          setupReflexInstance $MODE --externalHttpsPort="28993"
+        elif [ $MODE == "all" ]; then
+          setupReflexInstance $MODE
+        else
+          echo "Invalid MODE argument ($MODE). MODE must be set to 'live', 'backup', or 'replay'."
+          exit 1
+        fi
+        sudo chown -R reflex:reflex /opt/reflex
+        sudo ${APP_HOME}/bin/reflex server
+
+        sleep 2
 #
 #- name: Configure Node 2
 #  hosts: node2

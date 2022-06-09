@@ -8,5 +8,6 @@ NODE2_IP=`./ip node2`
 
 # Create inventory for Ansible using dynamically assigned IP addresses
 printf "[default]\n%s\n%s\n" $NODE1_IP $NODE2_IP > inventory.ini
+printf "\n[node1]\n$NODE1_IP\n" $NODE1_IP >> inventory.ini
 
 ansible-playbook playbook.yml
