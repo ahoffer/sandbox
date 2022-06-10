@@ -47,6 +47,27 @@
           - bzip2
 
 
+# Vagrant has been switching the hostname so they no longer match the box names
+- name: Fix hostname node1
+  hosts: node1
+  become: true
+  remote_user: vagrant
+  become_user: root
+  tasks:
+    - name: Fix node1
+      hostname:
+        name: node1
+
+- name: Fix hostname node2
+  hosts: node2
+  become: true
+  remote_user: vagrant
+  become_user: root
+  tasks:
+    - name: Fix node2
+      hostname:
+        name: node2
+
 - name: Install Reflex
   hosts: default
   become: true
@@ -140,35 +161,35 @@
 
 
 ## THE CONFIG-OPTIONS.SH LACKS THE PART THAT CREATES AND STARTS THE SERVICE. Could be missing other stuff too???
-- name: "Configure Node 1"
-  hosts: node1
-  become: true
-  remote_user: vagrant
-  tasks:
-    - name: Run config script
-      shell: |
-        set -e
-        APP_HOME=/opt/reflex
-        CONFIG_PATH=${APP_HOME}/bin/configure-cluster-cli
-        MODE=live
-        source ${CONFIG_PATH}/config-main.sh
-        if [ $MODE == "live" ]; then
-          sudo setupReflexInstance $MODE
-        elif [ $MODE == "backup" ]; then
-          setupReflexInstance $MODE --externalHttpsPort="18993"
-        elif [ $MODE == "replay" ]; then
-          setupReflexInstance $MODE --externalHttpsPort="28993"
-        elif [ $MODE == "all" ]; then
-          setupReflexInstance $MODE
-        else
-          echo "Invalid MODE argument ($MODE). MODE must be set to 'live', 'backup', or 'replay'."
-          exit 1
-        fi
-        sudo chown -R reflex:reflex /opt/reflex
-        sudo ${APP_HOME}/bin/reflex server
-
-        sleep 2
+#- name: "Configure Node 1"
+#  hosts: node1
+#  become: true
+#  remote_user: vagrant
+#  tasks:
+#    - name: Run config script
+#      shell: |
+#        set -e
+#        APP_HOME=/opt/reflex
+#        CONFIG_PATH=${APP_HOME}/bin/configure-cluster-cli
+#        MODE=live
+#        source ${CONFIG_PATH}/config-main.sh
+#        if [ $MODE == "live" ]; then
+#          sudo setupReflexInstance $MODE
+#        elif [ $MODE == "backup" ]; then
+#          setupReflexInstance $MODE --externalHttpsPort="18993"
+#        elif [ $MODE == "replay" ]; then
+#          setupReflexInstance $MODE --externalHttpsPort="28993"
+#        elif [ $MODE == "all" ]; then
+#          setupReflexInstance $MODE
+#        else
+#          echo "Invalid MODE argument ($MODE). MODE must be set to 'live', 'backup', or 'replay'."
+#          exit 1
+#        fi
+#        sudo chown -R reflex:reflex /opt/reflex
+#        sudo ${APP_HOME}/bin/reflex server
 #
+#        sleep 2
+
 #- name: Configure Node 2
 #  hosts: node2
 #  become: true
