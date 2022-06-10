@@ -45,7 +45,10 @@
 #          - kernel-headers
           - make
           - bzip2
-
+          - net-tools
+          # Note sure how many of these packages are actually necessary for zeroconf
+          - avahi
+          - avahi-tools
 
 # Vagrant has been switching the hostname so they no longer match the box names
 - name: Fix hostname node1

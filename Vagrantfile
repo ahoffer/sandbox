@@ -15,13 +15,13 @@ def create(name, config)
             v.memory = 8096
             v.cpus = 4
             end
-        config.vm.provision "shell" do |s|
-            # Since I added the "ssh-add -D" command to the clean-install script, this has not been necessary
-            ssh_pub_key = File.readlines("#{Dir.pwd}/.ssh/insecure_rsa.pub").first.strip
-            s.inline = <<-SHELL
-              echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
-            SHELL
-        end
+#         config.vm.provision "shell" do |s|
+#             # Since I added the "ssh-add -D" command to the clean-install script, this has not been necessary
+#             ssh_pub_key = File.readlines("#{Dir.pwd}/.ssh/insecure_rsa.pub").first.strip
+#             s.inline = <<-SHELL
+#               echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+#             SHELL
+#         end
     end
 end
 

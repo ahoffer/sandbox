@@ -11,4 +11,4 @@ printf "[default]\n%s\n%s\n" $NODE1_IP $NODE2_IP > inventory.ini
 printf "\n[node1]\n%s\n" $NODE1_IP >> inventory.ini
 printf "\n[node2]\n%s\n" $NODE2_IP >> inventory.ini
 
-ansible-playbook playbook.yml -vvv
+ansible-playbook playbook.yml
