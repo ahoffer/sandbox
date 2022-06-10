@@ -1,6 +1,7 @@
 #! /usr/bin/bash
 
-IP_ADDRESSES=`grep -o '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'  inventory.ini  | sort | uniq`
+IPV4_REGEX='[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
+IP_ADDRESSES=`grep -o ${IPV4_REGEX} inventory.ini | sort | uniq`
 IFS=" "
 arr=($IP_ADDRESSES)
 for ip in $arr
