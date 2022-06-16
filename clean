@@ -11,4 +11,3 @@ ssh-add -D
 
 # Obliterate all VMs and then reconstitute them
 vagrant destroy --force
-./install

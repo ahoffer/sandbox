@@ -5,7 +5,8 @@
 
 def create(name, config)
     config.vm.define name do
-        config.vm.box = "centos7vb"
+#         config.vm.box = "centos7vb"
+        config.vm.box = "centos/7"
         config.vbguest.installer_options = { allow_kernel_upgrade: true }
         config.vm.network :private_network, type: "dhcp"
         config.vm.hostname =  name
@@ -15,13 +16,13 @@ def create(name, config)
             v.memory = 8096
             v.cpus = 4
             end
-#         config.vm.provision "shell" do |s|
-#             # Since I added the "ssh-add -D" command to the clean-install script, this has not been necessary
-#             ssh_pub_key = File.readlines("#{Dir.pwd}/.ssh/insecure_rsa.pub").first.strip
-#             s.inline = <<-SHELL
-#               echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
-#             SHELL
-#         end
+        config.vm.provision "shell" do |s|
+            ssh_pub_key = File.readlines("#{Dir.pwd}/.ssh/insecure_rsa.pub").first.strip
+            s.inline = <<-SHELL
+              echo #{ssh_pub_key} >> /home/vagrant/.ssh/authorized_keys
+              chmod 640 /home/vagrant/.ssh/authorized_keys
+            SHELL
+        end
     end
 end
 

@@ -1,5 +1,10 @@
 #! /usr/bin/bash
 
+if ! $(vagrant plugin list | grep  vbguest); then
+  echo "Vagrant vbguest plugin not found. Installing."
+  vagrant plugin install vagrant-vbguest
+fi
+
 vagrant up --provision
 
 # Get dynamically assigned IPs of the VMs

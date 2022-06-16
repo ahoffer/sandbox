@@ -15,40 +15,48 @@
         path: /etc/ssh/sshd_config
         section:
         option: MaxAuthTries
-        value: 50
+        value: '50'
         backup: yes
 
     # Updating all packages is very slow
-    #    - name: Upgrade all packages
-    #      yum:
-    #        name: '*'
-    #        update_cache: yes
-    #        state: latest
+    - name: Upgrade all packages
+      yum:
+        name: '*'
+        update_cache: yes
+        state: latest
 
-    #    - name: Add repository
-    #      yum_repository:
-    #        name: elastic
-    #        description: Elasticsearch repository for 7.x packages
-    #        baseurl: https://artifacts.elastic.co/packages/7.x/yum
+    - name: Add repository
+      yum_repository:
+        name: elastic
+        description: Elasticsearch repository for 7.x packages
+        baseurl: https://artifacts.elastic.co/packages/7.x/yum
 
     - name: Install java and packages
       yum:
         name:
-          - java-11-openjdk
-#          - java-11-openjdk-devel
-          - epel-release
-          - python-qpid-proton
-          - mlocate
-          - perl
-#          - gcc
-#          - kernel-devel
-#          - kernel-headers
-          - make
-          - bzip2
-          - net-tools
-          # Note sure how many of these packages are actually necessary for zeroconf
           - avahi
           - avahi-tools
+          - bzip2
+          - epel-release
+          - gcc
+          - java-11-openjdk
+          - java-11-openjdk-devel
+          - kernel-devel
+          - kernel-headers
+          - make
+          - mlocate
+          - net-tools
+          - perl
+          - python-qpid-proton
+          - vim
+
+    - name: Install Docker
+      shell: |
+        sudo yum install -y yum-utils
+        sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+        sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+        sudo systemctl start docker
+
 
 # Vagrant has been switching the hostname so they no longer match the box names
 - name: Fix hostname node1
@@ -99,11 +107,17 @@
         name: "{{ rpm_file }}"
       become_user: root
 
-    - name: Update reflex user
+    - name: Ensure group "reflex" exists
+      group:
+        name: reflex
+        gid: 1100
+
+    - name: Create Reflex User
       user:
         name: reflex
-        groups: syers
+        groups: syers,wheel,reflex,docker
         append: yes
+        uid: 1100
 
     - name: Add sudo to reflex user
       user:
@@ -164,54 +178,11 @@
 
 
 ## THE CONFIG-OPTIONS.SH LACKS THE PART THAT CREATES AND STARTS THE SERVICE. Could be missing other stuff too???
-#- name: "Configure Node 1"
-#  hosts: node1
-#  become: true
-#  remote_user: vagrant
-#  tasks:
-#    - name: Run config script
-#      shell: |
-#        set -e
-#        APP_HOME=/opt/reflex
-#        CONFIG_PATH=${APP_HOME}/bin/configure-cluster-cli
-#        MODE=live
-#        source ${CONFIG_PATH}/config-main.sh
-#        if [ $MODE == "live" ]; then
-#          sudo setupReflexInstance $MODE
-#        elif [ $MODE == "backup" ]; then
-#          setupReflexInstance $MODE --externalHttpsPort="18993"
-#        elif [ $MODE == "replay" ]; then
-#          setupReflexInstance $MODE --externalHttpsPort="28993"
-#        elif [ $MODE == "all" ]; then
-#          setupReflexInstance $MODE
-#        else
-#          echo "Invalid MODE argument ($MODE). MODE must be set to 'live', 'backup', or 'replay'."
-#          exit 1
-#        fi
-#        sudo chown -R reflex:reflex /opt/reflex
-#        sudo ${APP_HOME}/bin/reflex server
-#
-#        sleep 2
+- name: "Configure Node 1"
+  hosts: node1
+  become: true
+  remote_user: vagrant
+  tasks:
+    - name: Copy and Execute the Reflex config script
+      script: sudo setup-reflex.sh
 
-#- name: Configure Node 2
-#  hosts: node2
-#  become: true
-#  remote_user: vagrant
-#  tasks:
-#    - name: Run config script
-#      shell: >
-#        sudo /opt/reflex/bin/configure-cluster-cli/config-options.sh
-#        backup
-#        --siteId alpha
-#        --live: "10.5.0.3"
-#        --backup: "10.5.0.4"
-#        --sslEnabled no
-#        --iplist: "10.5.07"
-#        --cluster_auth: admin
-#        --externalLive: admin
-#        --brokerUser: admin
-#        --brokerUserPassword: admin
-#        --classification: S
-#        --releasability: NF
-#        --doldap: no
-#        --dohydra: no
