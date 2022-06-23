@@ -7,10 +7,9 @@ def create(name, config)
     config.vm.define name do
 #         config.vm.box = "centos7vb"
         config.vm.box = "centos/7"
-        config.vbguest.installer_options = { allow_kernel_upgrade: true }
+#         config.vbguest.installer_options = { allow_kernel_upgrade: true }
+        config.vm.hostname = name
         config.vm.network :private_network, type: "dhcp"
-        config.vm.hostname =  name
-    #       config.vm.disk :disk, size: "20GB", primary: true
         config.vm.synced_folder "./files", "/vagrant"
         config.vm.provider "virtualbox" do |v|
             v.memory = 8096

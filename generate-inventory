@@ -1,0 +1,14 @@
+#! /usr/bin/bash
+
+# Get dynamically assigned IPs of the VMs
+NODE1_IP=$(./ip node1)
+NODE2_IP=$(./ip node2)
+
+# Create inventory for Ansible using dynamically assigned IP addresses
+printf "[default]\n%s\n%s\n" $NODE1_IP $NODE2_IP >inventory.ini
+printf "\n[node1]\n%s\n" $NODE1_IP >>inventory.ini
+printf "\n[node2]\n%s\n" $NODE2_IP >>inventory.ini
+
+# Create file to be inserted in the etc/hosts file
+printf "%s\t%s\n" $NODE1_IP node1 >dns.block
+printf "%s\t%s\n" $NODE2_IP node2 >>dns.block

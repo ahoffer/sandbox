@@ -1,19 +1,11 @@
 #! /usr/bin/bash
 
-if ! vagrant plugin list | grep vbguest; then
-  echo "Vagrant vbguest plugin not found. Installing."
-  vagrant plugin install vagrant-vbguestelse
-fi
+#if ! vagrant plugin list | grep vbguest; then
+#  echo "Vagrant vbguest plugin not found. Installing."
+#  vagrant plugin install vagrant-vbguestelse
+#fi
 
-vagrant up --provision
-
-# Get dynamically assigned IPs of the VMs
-NODE1_IP=`./ip node1`
-NODE2_IP=`./ip node2`
-
-# Create inventory for Ansible using dynamically assigned IP addresses
-printf "[default]\n%s\n%s\n" $NODE1_IP $NODE2_IP > inventory.ini
-printf "\n[node1]\n%s\n" $NODE1_IP >> inventory.ini
-printf "\n[node2]\n%s\n" $NODE2_IP >> inventory.ini
-
+vagrant up
+sleep 3
+./generate-inventory
 ansible-playbook playbook.yml

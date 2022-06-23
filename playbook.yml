@@ -1,14 +1,21 @@
 ---
-- name: Update All VMs
+- name: General Tasks
   hosts: default
   become: true
   remote_user: vagrant
+  become_user: root
   tasks:
     - name: Set authorized key taken from file
       authorized_key:
         user: vagrant
         state: present
         key: "{{ lookup('file', '.ssh/insecure_rsa.pub') }}"
+
+    - name: Update /etc/hosts files for fake DNS
+      blockinfile:
+        block: "{{ lookup('ansible.builtin.file', 'dns.block') }}"
+        path: /etc/hosts
+        backup: yes
 
     - name: Avoid vagrant trap with too many keys
       community.general.ini_file:
@@ -35,6 +42,7 @@
       yum:
         name:
           - avahi
+          - avahi-dnsconfd
           - avahi-tools
           - bzip2
           - epel-release
@@ -56,15 +64,54 @@
         sudo yum install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
         sudo systemctl start docker
 
+    - name: status
+      copy:
+          mode: 0755
+          dest: /usr/bin/status
+          content: |
+            #! /usr/bin/bash
+            sudo systemctl status reflex.service
+
+    - name: start
+      copy:
+        mode: 0755
+        dest: /usr/bin/start
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl start reflex.service
+
+    - name: restart
+      copy:
+        mode: 0755
+        dest: /usr/bin/restart
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl restart reflex.service
+
+    - name: stop
+      copy:
+        mode: 0755
+        dest: /usr/bin/stop
+        content: |
+          #! /usr/bin/bash
+          sudo systemctl stop reflex.service
+
+    - name: log
+      copy:
+        mode: 0755
+        dest: /usr/bin/log
+        content: |
+          #! /usr/bin/bash
+          less +F /opt/reflex/data/log/reflex.log
+
 
 # Vagrant has been switching the hostname so they no longer match the box names
-# NOTE: The VMs probably have to be restarted to get zero-conf to recognize their network names
-# TODO: Look into restarting the zero-conf daemon as part of the hostname role.
+# This happens in provisioning.
 - hosts: node1
   become: true
   remote_user: vagrant
   tasks:
-    - name: 'hostanem for node1'
+    - name: 'hostname for node1'
       import_role:
         name: hostname
       vars:
@@ -80,6 +127,7 @@
       vars:
         hostnamex: 'node2'
 
+
 - name: Install Reflex
   hosts: default
   remote_user: vagrant
@@ -92,7 +140,8 @@
         patterns: "*.rpm"
       register: rpm_find
 
-    # If there is no rpm file, the error message "The task includes an option with an undefined variable. The error was: list object has no element 0"
+    # If there is no rpm file, the error message:
+    # "The task includes an option with an undefined variable. The error was: list object has no element 0"
     - name: set fact
       set_fact:
         rpm_file: "{{ rpm_find.files[0].path }}"

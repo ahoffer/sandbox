@@ -1,3 +1,5 @@
 #! /usr/bin/bash
-IPV4_REGEX='[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}'
-vagrant ssh -c 'ip -h -4 address' "$1" | tac |  grep -o ${IPV4_REGEX} | head -n 1
+
+# Given the name of a running vagrant box return its IP addresses for network interface named eth1
+# Vagrant is adding 3 network adapter, but the other two seem spurious.
+vagrant ssh -c ' ip -f inet addr show eth1' "$1" | sed -En -e 's/.*inet ([0-9.]+).*/\1/p'
