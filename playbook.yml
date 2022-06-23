@@ -47,7 +47,6 @@
           - mlocate
           - net-tools
           - perl
-          - python-qpid-proton
           - vim
 
     - name: Install Docker
@@ -59,35 +58,32 @@
 
 
 # Vagrant has been switching the hostname so they no longer match the box names
-- name: Fix hostname node1
-  hosts: node1
+# NOTE: The VMs probably have to be restarted to get zero-conf to recognize their network names
+# TODO: Look into restarting the zero-conf daemon as part of the hostname role.
+- hosts: node1
   become: true
   remote_user: vagrant
-  become_user: root
   tasks:
-    - name: Fix node1
-      hostname:
-        name: node1
+    - name: 'node1'
+      import_role:
+        name: hostname
+      vars:
+        hostnamex: 'node1'
 
-- name: Fix hostname node2
-  hosts: node2
+- hosts: node2
   become: true
   remote_user: vagrant
-  become_user: root
   tasks:
-    - name: Fix node2
-      hostname:
-        name: node2
+    - name: 'node2'
+      import_role:
+        name: hostname
+      vars:
+        hostnamex: 'node2'
 
 - name: Install Reflex
   hosts: default
   become: true
-  remote_user: vagrant
   tasks:
-    - name: DEBUG
-      debug:
-        msg: "OS {{ ansible_facts['os_family'] }}"
-
     - name: find
       find:
         paths: /vagrant
@@ -103,86 +99,16 @@
       debug: msg="{{ rpm_file }}"
 
     - name: Install RPM
+      become: root
       yum:
         name: "{{ rpm_file }}"
-      become_user: root
-
-    - name: Ensure group "reflex" exists
-      group:
-        name: reflex
-        gid: 1100
-
-    - name: Create Reflex User
-      user:
-        name: reflex
-        groups: syers,wheel,reflex,docker
-        append: yes
-        uid: 1100
-
-    - name: Add sudo to reflex user
-      user:
-        name: reflex
-        groups: wheel
-        append: yes
-      when: ansible_facts['os_family'] == "RedHat"
-
-    - name: Add sudo to reflex user (deb)
-      user:
-        name: reflex
-        groups: sudo
-        append: yes
-      when: ansible_facts['os_family'] == "Debian"
-
-    - name: Remove reflex password for easy sudo
-      shell: "sudo passwd -d reflex"
-
-    - name: status
-      copy:
-        mode: 0755
-        dest: /usr/bin/status
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl status reflex.service
-
-    - name: start
-      copy:
-        mode: 0755
-        dest: /usr/bin/start
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl start reflex.service
-
-    - name: restart
-      copy:
-        mode: 0755
-        dest: /usr/bin/restart
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl restart reflex.service
-
-    - name: stop
-      copy:
-        mode: 0755
-        dest: /usr/bin/stop
-        content: |
-          #! /usr/bin/bash
-          sudo systemctl stop reflex.service
-
-    - name: log
-      copy:
-        mode: 0755
-        dest: /usr/bin/log
-        content: |
-          #! /usr/bin/bash
-          tail -n200 -f /opt/reflex/data/log/reflex.log
 
 
 ## THE CONFIG-OPTIONS.SH LACKS THE PART THAT CREATES AND STARTS THE SERVICE. Could be missing other stuff too???
-- name: "Configure Node 1"
-  hosts: node1
-  become: true
-  remote_user: vagrant
-  tasks:
-    - name: Copy and Execute the Reflex config script
-      script: sudo setup-reflex.sh
-
+#- name: "Configure Node 1"
+#  hosts: node1
+#  become: true
+#  remote_user: vagrant
+#  tasks:
+#    - name: Copy and Execute the Reflex config script
+#      script: sudo setup-reflex.sh

@@ -1,0 +1,19 @@
+---
+
+- name: 'Call hostnamectl'
+  shell: 'hostnamectl set-hostname  {{ hostnamex }}'
+
+- name: Update /etc/hosts
+  ansible.builtin.lineinfile:
+    path: '/etc/hosts'
+    regex: 'node'
+    line: '127.0.0.1  {{ hostnamex }}'
+
+- name: Update sysconfig
+  ansible.builtin.lineinfile:
+    path: /etc/sysconfig/network
+    regex: 'HOSTNAME'
+    line: 'HOSTNAME= {{ hostnamex }}'
+
+- name: Restart networking
+  shell: '/etc/init.d/network restart'
