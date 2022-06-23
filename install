@@ -1,9 +1,9 @@
 #! /usr/bin/bash
 
-#if ! vagrant plugin list | grep vbguest; then
-#  echo "Vagrant vbguest plugin not found. Installing."
-#  vagrant plugin install vagrant-vbguestelse
-#fi
+if ! vagrant plugin list | grep vbguest; then
+  echo "Vagrant vbguest plugin not found. Installing."
+  vagrant plugin install vagrant-vbguestelse
+fi
 
 vagrant up
 sleep 3
