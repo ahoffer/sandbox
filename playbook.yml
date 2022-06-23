@@ -64,7 +64,7 @@
   become: true
   remote_user: vagrant
   tasks:
-    - name: 'node1'
+    - name: 'hostanem for node1'
       import_role:
         name: hostname
       vars:
@@ -74,7 +74,7 @@
   become: true
   remote_user: vagrant
   tasks:
-    - name: 'node2'
+    - name: 'hostname for node2'
       import_role:
         name: hostname
       vars:
@@ -82,7 +82,9 @@
 
 - name: Install Reflex
   hosts: default
+  remote_user: vagrant
   become: true
+  become_user: root
   tasks:
     - name: find
       find:
@@ -99,7 +101,6 @@
       debug: msg="{{ rpm_file }}"
 
     - name: Install RPM
-      become: root
       yum:
         name: "{{ rpm_file }}"
 
